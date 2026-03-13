@@ -44,7 +44,7 @@ model     = NeuralNet(input_size, hidden_size, num_classes).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-# ── track every single step ──────────────────────────────────────────────────
+# track every single step
 loss_history  = []
 acc_history   = []
 step_history  = []
@@ -52,7 +52,7 @@ global_step   = 0
 n_total_steps = len(train_loader)
 epoch_boundaries = []   # step numbers where a new epoch starts
 
-# ── training loop ─────────────────────────────────────────────────────────────
+# training loop
 for epoch in range(num_epochs):
     epoch_boundaries.append(global_step)
     for i, (images, labels) in enumerate(train_loader):
@@ -68,7 +68,7 @@ for epoch in range(num_epochs):
 
         global_step += 1
 
-        # record EVERY step for a smooth graph
+        # record every step for a smooth graph
         _, preds    = torch.max(outputs, 1)
         batch_acc   = 100.0 * (preds == labels).sum().item() / labels.size(0)
         loss_history.append(loss.item())
@@ -192,12 +192,12 @@ for plot_idx, data_idx in enumerate(indices6):
     probs = F.softmax(logits, dim=0).numpy()
     correct = pred_label == true_label
 
-    # input image — left, vertically centered next to y axis
+    # input image
     ax_img = ax.inset_axes([-0.07, 0.25, 0.25, 0.45])
     ax_img.imshow(img, cmap='gray')
     ax_img.axis('off')
 
-    # bar chart — smaller, shifted right to give image space
+    # bar chart
     ax_bar = ax.inset_axes([0.32, 0.08, 0.60, 0.75])
     bar_colors = ['#e74c3c' if i == pred_label else '#bdc3c7' for i in range(10)]
     ax_bar.bar(range(10), probs, color=bar_colors)
