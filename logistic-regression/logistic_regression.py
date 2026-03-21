@@ -61,3 +61,15 @@ with torch.no_grad():
     y_predicted_cls = y_predicted.round()
     acc = y_predicted_cls.eq(y_test).sum() / float(y_test.shape[0])
     print(f'accuracy = {acc:.4f}')
+
+    # show 10 random predictions
+    indices = np.random.choice(len(y_test), 10, replace=False)
+    print(f"\n{'Sample':<8} {'True Label':<12} {'Predicted':<12} {'Confidence':<12} {'Correct'}")
+    print("-" * 55)
+    for i in indices:
+        true = int(y_test[i].item())
+        pred = int(y_predicted_cls[i].item())
+        conf = y_predicted[i].item()
+        label_names = {0: "Malignant", 1: "Benign"}
+        correct = "✓" if true == pred else "✗"
+        print(f"{i:<8} {label_names[true]:<12} {label_names[pred]:<12} {conf:<12.2%} {correct}")
