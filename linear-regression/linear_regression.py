@@ -37,8 +37,14 @@ for epoch in range(num_epochs):
     if (epoch+1) % 10 == 0:
         print(f'epoch: {epoch+1}, loss = {loss.item():.4f}')
 
-#plot
 predicted = model(x).detach().numpy()
-plt.plot(x_numpy, y_numpy, "ro")
-plt.plot(x_numpy, predicted, "b")
+
+plt.figure(figsize=(10, 6))
+plt.plot(x_numpy, y_numpy, "ro", label="Training Data (x, y)")
+plt.plot(x_numpy, predicted, "b", label=f"Model: y_hat = {model.weight.item():.2f}x + {model.bias.item():.2f}")
+plt.xlabel("x (Input Feature)")
+plt.ylabel("y (Output)")
+plt.title(f"Linear Regression after {num_epochs} Epochs | MSE Loss = {loss.item():.2f}")
+plt.legend()
+plt.grid(True, alpha=0.3)
 plt.show()
