@@ -7,6 +7,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 
+from torch.utils.tensorboard import SummaryWriter
+
+# before
+writer = SummaryWriter("runs/mnist")
+
+# after
+from datetime import datetime
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+writer = SummaryWriter(f"runs/mnist_{timestamp}")
+
 # device config
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -44,6 +54,10 @@ model     = NeuralNet(input_size, hidden_size, num_classes).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+# log model graph to TensorBoard
+example_input = torch.zeros(1, input_size).to(device)
+writer.add_graph(model, example_input)
+
 # track every single step
 loss_history  = []
 acc_history   = []
@@ -74,6 +88,10 @@ for epoch in range(num_epochs):
         loss_history.append(loss.item())
         acc_history.append(batch_acc)
         step_history.append(global_step)
+
+        # log loss and batch accuracy to TensorBoard at every step
+        writer.add_scalar('Loss/train', loss.item(), global_step)
+        writer.add_scalar('Accuracy/batch', batch_acc, global_step)
 
         if (i + 1) % 100 == 0:
             print(f"epoch {epoch+1}/{num_epochs}, "
@@ -109,13 +127,18 @@ with torch.no_grad():
 final_acc = 100.0 * n_correct / n_samples
 print(f'\nFinal test accuracy = {final_acc:.2f}%')
 
+# log final test accuracy as a scalar
+writer.add_scalar('Accuracy/test_final', final_acc, global_step)
+
 # flatten all test data into single tensors
 all_test_images  = torch.cat(all_test_images,  dim=0)   # [10000, 1, 28, 28]
 all_test_labels  = torch.cat(all_test_labels,  dim=0)   # [10000]
 all_test_preds   = torch.cat(all_test_preds,   dim=0)   # [10000]
 all_test_outputs = torch.cat(all_test_outputs, dim=0)   # [10000, 10]
 
-# visualising learning curve graph
+# ── TensorBoard: learning curve ───────────────────────────────────────────────
+# log the full per-step loss and accuracy curves as figures so epoch boundaries
+# and the final-test-accuracy reference line are visible in TensorBoard
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 fig.suptitle('Learning Curve', fontsize=16, fontweight='bold')
@@ -142,9 +165,16 @@ ax2.grid(True, alpha=0.3)
 ax2.legend()
 
 plt.tight_layout()
-plt.savefig('learning_curve.png', dpi=150, bbox_inches='tight')
-plt.show()
+writer.add_figure('Learning Curve', fig)
+plt.close(fig)
 
+# ── old code: creates learning_curve.png locally ────────────────────────────
+# plt.tight_layout()
+# plt.savefig('learning_curve.png', dpi=150, bbox_inches='tight')
+# plt.show()
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── TensorBoard: random samples and decisions ─────────────────────────────────
 # visualizing random samples and decisions
 
 indices = random.sample(range(len(all_test_images)), 20)
@@ -174,10 +204,23 @@ for plot_idx, data_idx in enumerate(indices):
         spine.set_linewidth(3)
 
 plt.tight_layout()
-plt.savefig('predictions.png', dpi=150, bbox_inches='tight')
-plt.show()
+writer.add_figure('Predictions/random_samples', fig2)
+plt.close(fig2)
 
+# ── old code: creates predictions.png locally ────────────────────────────────
+# plt.tight_layout()
+# plt.savefig('predictions.png', dpi=150, bbox_inches='tight')
+# plt.show()
+# ─────────────────────────────────────────────────────────────────────────────
+
+# also log the 20 sampled images as a grid with predicted/true labels as text
+sample_imgs = torch.stack([all_test_images[i] for i in indices])   # [20, 1, 28, 28]
+img_grid    = torchvision.utils.make_grid(sample_imgs, nrow=5, normalize=True)
+writer.add_image('Predictions/image_grid', img_grid)
+
+# ── TensorBoard: estimated probability distribution for random images ──────────
 # visualising estimated probability distribution for random images
+
 indices6 = random.sample(range(len(all_test_images)), 6)
 
 fig3, axes3 = plt.subplots(2, 3, figsize=(14, 8))
@@ -214,10 +257,27 @@ for plot_idx, data_idx in enumerate(indices6):
     ax.axis('off')
 
 plt.tight_layout()
-plt.savefig('confidence.png', dpi=150, bbox_inches='tight')
-plt.show()
+writer.add_figure('Confidence/probability_distributions', fig3)
+plt.close(fig3)
 
-print("\nGenerated images for training performance analysis:")
-print("  learning_curve.png")
-print("  predictions.png")
-print("  confidence.png")
+# ── old code: creates confidence.png locally ─────────────────────────────────
+# plt.tight_layout()
+# plt.savefig('confidence.png', dpi=150, bbox_inches='tight')
+# plt.show()
+# ─────────────────────────────────────────────────────────────────────────────
+
+# log per-class precision/recall to TensorBoard using add_pr_curve
+probs_all = F.softmax(all_test_outputs, dim=1)   # [10000, 10]
+for class_idx in range(num_classes):
+    class_labels = (all_test_labels == class_idx).int()
+    class_probs  = probs_all[:, class_idx]
+    writer.add_pr_curve(f'PR_curve/class_{class_idx}', class_labels, class_probs)
+
+writer.close()
+
+print("\nAll visualizations written to TensorBoard (runs/mnist).")
+print("Launch with:  tensorboard --logdir=runs")
+# print("\nGenerated images for training performance analysis:")
+# print("  learning_curve.png")
+# print("  predictions.png")
+# print("  confidence.png")
