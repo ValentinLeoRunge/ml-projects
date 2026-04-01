@@ -20,7 +20,7 @@ def deal_cards(nr):
         card = numbers[random_number] + signs[random_sign]
 
         # add card to deck
-        if card not in cards:
+        if card not in cards:   # this gets very inefficient if you try to draw a lot of cards but is efficient enough for drawing just a few cards
             cards.append(card)
 
     return cards
@@ -37,7 +37,7 @@ def deal_others_cards(hand):
         card = numbers[random_number] + signs[random_sign]
 
         # add card to deck
-        if card not in cards and card not in hand:
+        if card not in cards and card not in hand:  # this gets very inefficient if you try to draw a lot of cards but is efficient enough for drawing just a few cards
             cards.append(card)
 
     return cards
