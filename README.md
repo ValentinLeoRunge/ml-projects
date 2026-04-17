@@ -11,7 +11,6 @@ Custom regression model trained on a self-generated dataset to predict heads-up 
 - Features: Card rank (2-14) and suit (0-3) encoding → 4 input features
 - Architecture: Input (4) → Hidden Layer (20, ReLU) → Output (1)
 - Loss: MSE | Optimizer: Adam
-- Test loss: ~0.0009 (≈ ±3% win rate accuracy)
 - Interactive CLI predictor with input validation
 - Training monitored with TensorBoard
 
